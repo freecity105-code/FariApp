@@ -1,1 +1,1 @@
-Trigger APK build workflow.
+Build full Persian library app APK.
