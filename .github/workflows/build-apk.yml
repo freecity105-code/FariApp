@@ -26,21 +26,40 @@ jobs:
         with:
           gradle-version: '8.7'
 
-      - name: Build debug APK and Play bundle
-        run: gradle assembleDebug bundleRelease --no-daemon
-
-      - name: Verify outputs
+      - name: Create CI release signing key
         run: |
-          ls -lh app/build/outputs/apk/debug/app-debug.apk
+          keytool -genkeypair -v \
+            -keystore "$RUNNER_TEMP/fari-release.jks" \
+            -storepass "fari-build-password" \
+            -keypass "fari-build-password" \
+            -alias "fari-release" \
+            -keyalg RSA \
+            -keysize 2048 \
+            -validity 10000 \
+            -dname "CN=FariApp, OU=FariApp, O=FariApp, L=Iran, ST=Iran, C=IR"
+
+      - name: Build signed release APK and Play bundle
+        env:
+          FARI_KEYSTORE: ${{ runner.temp }}/fari-release.jks
+          FARI_KEYSTORE_PASSWORD: fari-build-password
+          FARI_KEY_ALIAS: fari-release
+          FARI_KEY_PASSWORD: fari-build-password
+        run: gradle assembleRelease bundleRelease --no-daemon
+
+      - name: Verify release signatures and outputs
+        run: |
+          APK_SIGNER=$(find "$ANDROID_HOME/build-tools" -name apksigner | sort -V | tail -1)
+          "$APK_SIGNER" verify --verbose app/build/outputs/apk/release/app-release.apk
+          ls -lh app/build/outputs/apk/release/app-release.apk
           ls -lh app/build/outputs/bundle/release/app-release.aab
 
       - name: Upload Android builds
         uses: actions/upload-artifact@v4
         with:
-          name: FariApp-version-1.0.2-android
+          name: FariApp-version-1.0.3-release
           path: |
-            app/build/outputs/apk/debug/app-debug.apk
+            app/build/outputs/apk/release/app-release.apk
             app/build/outputs/bundle/release/app-release.aab
           if-no-files-found: error
 
-# Rebuild after source fix.
+# Signed release build for direct installation and Google Play bundle upload.
