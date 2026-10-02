@@ -1,4 +1,4 @@
-name: Build APK
+name: Build Android
 
 on:
   push:
@@ -26,19 +26,19 @@ jobs:
         with:
           gradle-version: '8.7'
 
-      - name: Build installable APKs
-        run: gradle assembleDebug assembleRelease --no-daemon
+      - name: Build debug APK and Play bundle
+        run: gradle assembleDebug bundleRelease --no-daemon
 
-      - name: Verify APKs exist
+      - name: Verify outputs
         run: |
           ls -lh app/build/outputs/apk/debug/app-debug.apk
-          ls -lh app/build/outputs/apk/release/app-release.apk
+          ls -lh app/build/outputs/bundle/release/app-release.aab
 
-      - name: Upload installable APKs
+      - name: Upload Android builds
         uses: actions/upload-artifact@v4
         with:
-          name: FariApp-version-1.0.1-apks
+          name: FariApp-version-1.0.2-android
           path: |
             app/build/outputs/apk/debug/app-debug.apk
-            app/build/outputs/apk/release/app-release.apk
+            app/build/outputs/bundle/release/app-release.aab
           if-no-files-found: error
