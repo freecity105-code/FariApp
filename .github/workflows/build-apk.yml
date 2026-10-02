@@ -26,12 +26,19 @@ jobs:
         with:
           gradle-version: '8.7'
 
-      - name: Build Debug APK
-        run: gradle assembleDebug --no-daemon
+      - name: Build installable APKs
+        run: gradle assembleDebug assembleRelease --no-daemon
 
-      - name: Upload APK
+      - name: Verify APKs exist
+        run: |
+          ls -lh app/build/outputs/apk/debug/app-debug.apk
+          ls -lh app/build/outputs/apk/release/app-release.apk
+
+      - name: Upload installable APKs
         uses: actions/upload-artifact@v4
         with:
-          name: FariApp-debug-apk
-          path: app/build/outputs/apk/debug/app-debug.apk
+          name: FariApp-version-1.0.1-apks
+          path: |
+            app/build/outputs/apk/debug/app-debug.apk
+            app/build/outputs/apk/release/app-release.apk
           if-no-files-found: error
