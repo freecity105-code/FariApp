@@ -10,15 +10,16 @@ android {
         applicationId 'com.fari.maktabeh'
         minSdk 23
         targetSdk 35
-        versionCode 2
-        versionName '1.0.1'
+        versionCode 3
+        versionName '1.0.2'
     }
 
     buildTypes {
         release {
-            // Signed with the standard debug key for this test build so it can be installed directly.
-            signingConfig signingConfigs.debug
             minifyEnabled false
         }
     }
+
+    // Build a Google Play compatible Android App Bundle (AAB).
+    // Final publishing signing is configured in Google Play Console / upload-key setup.
 }
