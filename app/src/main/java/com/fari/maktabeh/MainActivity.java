@@ -6,6 +6,7 @@ import android.content.*;
 import android.content.pm.PackageManager;
 import android.database.Cursor;
 import android.graphics.Typeface;
+import android.net.Uri;
 import android.os.Bundle;
 import android.provider.OpenableColumns;
 import android.speech.RecognizerIntent;
@@ -83,7 +84,7 @@ public class MainActivity extends Activity {
 
     private void showHome(){
         clear();
-        body.addView(title("مکتبه کامله فارسی — نسخه ۱.۰.۱",27));
+        body.addView(title("مکتبه کامله فارسی — نسخه ۱.۰.۲",27));
         TextView sub=new TextView(this); sub.setText("کتابخانه | جستجو | علاقه‌مندی | یادداشت | گفتار به متن"); sub.setGravity(Gravity.RIGHT); body.addView(sub);
         String last=prefs.getString("last_book","");
         if(!last.isEmpty()){
@@ -212,6 +213,7 @@ public class MainActivity extends Activity {
         else if(r==REQ_IMPORT){
             try{
                 InputStream in=getContentResolver().openInputStream(d.getData());
+                if(in==null)throw new Exception("empty input");
                 BufferedReader br=new BufferedReader(new InputStreamReader(in,StandardCharsets.UTF_8));
                 StringBuilder s=new StringBuilder();String line;while((line=br.readLine())!=null)s.append(line).append('\n');br.close();
                 String name=displayName(d.getData());saveImported(name,s.toString());books.add(new Book(name,"واردشده","فایل کاربر",s.toString(),true));
