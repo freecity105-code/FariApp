@@ -10,16 +10,31 @@ android {
         applicationId 'com.fari.maktabeh'
         minSdk 23
         targetSdk 35
-        versionCode 3
-        versionName '1.0.2'
+        versionCode 4
+        versionName '1.0.3'
+    }
+
+    signingConfigs {
+        release {
+            def ks = System.getenv('FARI_KEYSTORE')
+            def kp = System.getenv('FARI_KEYSTORE_PASSWORD')
+            def ka = System.getenv('FARI_KEY_ALIAS')
+            def ap = System.getenv('FARI_KEY_PASSWORD')
+            if (ks != null && kp != null && ka != null && ap != null) {
+                storeFile file(ks)
+                storePassword kp
+                keyAlias ka
+                keyPassword ap
+            }
+        }
     }
 
     buildTypes {
         release {
             minifyEnabled false
+            signingConfig signingConfigs.release
         }
     }
 
-    // Build a Google Play compatible Android App Bundle (AAB).
-    // Final publishing signing is configured in Google Play Console / upload-key setup.
+    // Release builds are signed in CI. The AAB is suitable for Google Play upload.
 }
