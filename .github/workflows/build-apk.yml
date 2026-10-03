@@ -26,6 +26,16 @@ jobs:
         with:
           gradle-version: '8.7'
 
+      - name: Read app version
+        run: |
+          VERSION_NAME=$(sed -n "s/^[[:space:]]*versionName[[:space:]]*'\([^']*\)'/\1/p" app/build.gradle | head -1)
+          VERSION_CODE=$(sed -n "s/^[[:space:]]*versionCode[[:space:]]*\([0-9][0-9]*\)/\1/p" app/build.gradle | head -1)
+          test -n "$VERSION_NAME"
+          test -n "$VERSION_CODE"
+          echo "VERSION_NAME=$VERSION_NAME" >> "$GITHUB_ENV"
+          echo "VERSION_CODE=$VERSION_CODE" >> "$GITHUB_ENV"
+          echo "Building FariApp version $VERSION_NAME (code $VERSION_CODE)"
+
       - name: Create CI release signing key
         run: |
           keytool -genkeypair -v \
@@ -50,16 +60,25 @@ jobs:
         run: |
           APK_SIGNER=$(find "$ANDROID_HOME/build-tools" -name apksigner | sort -V | tail -1)
           "$APK_SIGNER" verify --verbose app/build/outputs/apk/release/app-release.apk
+          test -s app/build/outputs/apk/release/app-release.apk
+          test -s app/build/outputs/bundle/release/app-release.aab
           ls -lh app/build/outputs/apk/release/app-release.apk
           ls -lh app/build/outputs/bundle/release/app-release.aab
+
+      - name: Prepare clearly named release files
+        run: |
+          cp app/build/outputs/apk/release/app-release.apk "FariApp-${VERSION_NAME}-release.apk"
+          cp app/build/outputs/bundle/release/app-release.aab "FariApp-${VERSION_NAME}-release.aab"
+          sha256sum "FariApp-${VERSION_NAME}-release.apk" "FariApp-${VERSION_NAME}-release.aab"
 
       - name: Upload Android builds
         uses: actions/upload-artifact@v4
         with:
-          name: FariApp-version-1.0.3-release
+          name: FariApp-version-${{ env.VERSION_NAME }}-release
           path: |
-            app/build/outputs/apk/release/app-release.apk
-            app/build/outputs/bundle/release/app-release.aab
+            FariApp-${{ env.VERSION_NAME }}-release.apk
+            FariApp-${{ env.VERSION_NAME }}-release.aab
           if-no-files-found: error
+          retention-days: 90
 
 # Signed release build for direct installation and Google Play bundle upload.
