@@ -1,0 +1,40 @@
+<!doctype html>
+<html lang="fa" dir="rtl">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>مکتبه کامله فارسی</title>
+<style>
+*{box-sizing:border-box}body{margin:0;font-family:Tahoma,Arial,sans-serif;background:#f5f6f8;color:#20242a}header{background:#18202a;color:#fff;padding:18px 5%;position:sticky;top:0;z-index:3}h1{margin:0 0 10px;font-size:24px}.bar{display:flex;gap:8px;flex-wrap:wrap}.bar input{flex:1;min-width:220px;padding:12px;border:0;border-radius:8px}.bar button,button{padding:10px 14px;border:0;border-radius:8px;cursor:pointer;background:#26384b;color:#fff}.wrap{max-width:1200px;margin:auto;padding:20px}.grid{display:grid;grid-template-columns:240px 1fr;gap:18px}.panel,.card{background:#fff;border:1px solid #ddd;border-radius:12px;padding:16px}.cats button{display:block;width:100%;margin:7px 0;text-align:right;background:#eef1f4;color:#20242a}.cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:14px}.card h3{margin-top:0}.muted{color:#68727d;font-size:13px}.reader{white-space:pre-wrap;line-height:2;font-size:19px;background:#fff;padding:25px;border-radius:12px;min-height:300px}.hidden{display:none}.tools{display:flex;gap:8px;flex-wrap:wrap;margin:12px 0}.note{width:100%;min-height:180px;padding:12px}.status{padding:10px;background:#eef5ff;border-radius:8px;margin-bottom:12px}.danger{background:#8b2e2e!important}.empty{padding:30px;text-align:center;color:#68727d}
+@media(max-width:800px){.grid{grid-template-columns:1fr}.cats{display:flex;gap:7px;overflow:auto}.cats button{min-width:max-content}}
+</style>
+</head>
+<body>
+<header><h1>مکتبه کامله فارسی</h1><div class="bar"><input id="q" placeholder="جستجو در عنوان، نویسنده، دسته و متن..."><button onclick="search()">جستجو</button><button onclick="showHome()">خانه</button></div></header>
+<div class="wrap"><div id="status" class="status">کتابخانه آماده است. منابع خودتان را می‌توانید از فایل TXT وارد کنید.</div><div class="grid"><aside class="panel"><h3>دسته‌ها</h3><div id="cats" class="cats"></div><hr><button onclick="importTxt()">وارد کردن TXT</button><input id="file" type="file" accept=".txt,text/plain" hidden><button onclick="showNotes()">یادداشت‌ها</button><button onclick="exportData()">پشتیبان‌گیری</button><button onclick="document.getElementById('backup').click()">بازیابی</button><input id="backup" type="file" accept="application/json" hidden><button onclick="about()">درباره</button></aside><main id="main"></main></div></div>
+<script>
+const KEY='fari_maktabeh_v1';
+let data=JSON.parse(localStorage.getItem(KEY)||'null')||{books:[
+{id:'quran',title:'قرآن کریم',author:'منبع قرآنی',cat:'قرآن',text:'این بخش برای متن قرآن از منبع آزاد یا دارای مجوز طراحی شده است. برای افزودن متن کامل، فایل مجاز خود را وارد کنید.'},
+{id:'nahj',title:'نهج البلاغه',author:'امام علی(ع)',cat:'شیعه',text:'این بخش برای نهج‌البلاغه آماده است. متن کامل را فقط از منبع آزاد یا دارای مجوز وارد کنید.'},
+{id:'hadith',title:'کتابخانه حدیث',author:'منابع حدیثی',cat:'حدیث',text:'جستجو و مطالعه منابع حدیثی با ثبت نام کتاب، باب، جلد، صفحه و منبع اصلی.'},
+{id:'fiqh',title:'فقه و احکام',author:'منابع معتبر',cat:'فقه',text:'مطالب فقهی باید همراه با نام مرجع، کتاب و ارجاع دقیق منبع ثبت شوند.'},
+{id:'history',title:'تاریخ اسلام',author:'منابع تاریخی',cat:'تاریخ',text:'کتابخانه تاریخ اسلام با امکان نگهداری متن و مشخصات منبع.'},
+{id:'science',title:'علوم و دانش',author:'منابع علمی',cat:'دانش',text:'منابع علمی مجاز با مشخصات کتابشناختی و نشانی منبع اصلی.'}],fav:[],notes:''};
+function save(){localStorage.setItem(KEY,JSON.stringify(data))}
+function esc(s){return s.replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]))}
+function cats(){let a=[...new Set(data.books.map(b=>b.cat))];document.getElementById('cats').innerHTML='<button onclick="list(\'همه\')">همه منابع ('+data.books.length+')</button><button onclick="list(\'علاقه‌مندی\')">علاقه‌مندی‌ها</button>'+a.map(c=>`<button onclick="list('${esc(c)}')">${esc(c)}</button>`).join('')}
+function card(b){let f=data.fav.includes(b.id);return `<article class="card"><h3>${esc(b.title)}</h3><div class="muted">${esc(b.cat)} | ${esc(b.author)}</div><p>${esc((b.text||'').slice(0,180))}</p><div class="tools"><button onclick="read('${b.id}')">مطالعه</button><button onclick="fav('${b.id}')">${f?'حذف علاقه‌مندی':'علاقه‌مندی'}</button></div></article>`}
+function list(cat='همه',arr=null){let bs=arr||data.books;if(cat==='علاقه‌مندی')bs=bs.filter(b=>data.fav.includes(b.id));else if(cat!=='همه')bs=bs.filter(b=>b.cat===cat);document.getElementById('main').innerHTML=`<h2>${esc(cat)}</h2><div class="cards">${bs.length?bs.map(card).join(''):'<div class="empty">موردی پیدا نشد.</div>'}</div>`}
+function showHome(){cats();list('همه');document.getElementById('status').textContent='کتابخانه آماده است؛ جستجو، مطالعه، علاقه‌مندی، یادداشت و ورود فایل فعال است.'}
+function search(){let q=document.getElementById('q').value.trim().toLowerCase();if(!q)return showHome();let r=data.books.filter(b=>(b.title+' '+b.author+' '+b.cat+' '+b.text).toLowerCase().includes(q));cats();list('نتیجه جستجو',r)}
+function read(id){let b=data.books.find(x=>x.id===id);if(!b)return;document.getElementById('main').innerHTML=`<div class="tools"><button onclick="showHome()">بازگشت</button><button onclick="fav('${b.id}')">${data.fav.includes(b.id)?'حذف علاقه‌مندی':'افزودن به علاقه‌مندی'}</button><button onclick="speak('${esc(b.text)}')">خواندن با صدا</button><button onclick="copyText('${b.id}')">کپی متن</button></div><div class="panel"><h2>${esc(b.title)}</h2><div class="muted">${esc(b.cat)} | ${esc(b.author)}</div><div id="reader" class="reader">${esc(b.text)}</div></div>`}
+function fav(id){let i=data.fav.indexOf(id);i<0?data.fav.push(id):data.fav.splice(i,1);save();showHome()}
+function showNotes(){document.getElementById('main').innerHTML='<h2>یادداشت‌های من</h2><div class="panel"><textarea id="notes" class="note" placeholder="یادداشت‌های خود را بنویسید...">'+esc(data.notes)+'</textarea><div class="tools"><button onclick="data.notes=document.getElementById(\'notes\').value;save();msg(\'یادداشت ذخیره شد\')">ذخیره</button><button onclick="data.notes=\'\';save();showNotes()" class="danger">پاک کردن</button></div></div>'}
+function importTxt(){document.getElementById('file').click()}document.getElementById('file').onchange=e=>{let f=e.target.files[0];if(!f)return;let r=new FileReader();r.onload=()=>{let id='file_'+Date.now();data.books.push({id,title:f.name,author:'فایل کاربر',cat:'واردشده',text:r.result});save();showHome();msg('فایل وارد شد')};r.readAsText(f,'UTF-8')}
+function exportData(){let a=document.createElement('a');a.href=URL.createObjectURL(new Blob([JSON.stringify(data,null,2)],{type:'application/json'}));a.download='maktabeh-backup.json';a.click()}
+document.getElementById('backup').onchange=e=>{let f=e.target.files[0];if(!f)return;let r=new FileReader();r.onload=()=>{try{data=JSON.parse(r.result);save();showHome();msg('پشتیبان بازیابی شد')}catch(x){msg('فایل پشتیبان معتبر نیست')}};r.readAsText(f)}
+function copyText(id){let b=data.books.find(x=>x.id===id);navigator.clipboard?.writeText(b.text);msg('متن کپی شد')}
+function speak(t){if(!('speechSynthesis'in window))return msg('خواندن صوتی در این مرورگر پشتیبانی نمی‌شود');speechSynthesis.cancel();speechSynthesis.speak(new SpeechSynthesisUtterance(t))}
+function about(){document.getElementById('main').innerHTML='<div class="panel"><h2>درباره</h2><p>مکتبه کامله فارسی یک کتابخانه محلی است برای نگهداری و جستجوی منابع مجاز، یادداشت‌ها و فایل‌های شخصی.</p><p>محتوای دارای حق‌نشر بدون مجوز در پروژه توزیع نمی‌شود؛ می‌توان فایل‌های مجاز را خودتان وارد کنید.</p></div>'}
+function msg(t){document.getElementById('status').textContent=t}showHome();
+</script></body></html>
